@@ -1,0 +1,101 @@
+
+Карта настройки soho устройств mikrotik ROSv6
+
+1) Обновление RouterOS
+2) Обновление firmware
+3) Сброс конфигурации ( с галочкой no-default config)
+   Задать имя устройства
+   Задать имена интерфейсов
+   Задать user/password
+4) Отключить неиспользуемые службы/сервисы
+5) Создать bridge-LAN и добавить в него все интерфейсы, включая wifi, кроме ether1-WAN
+6) Задать ip адресацию на bridge-LAN (например 192.168.99.1/24)
+   На ether1-WAN повесить dhcp-client (если от ISP получаем настройки автоматически)
+   Задать MGMT address-list : allowed-list с адресами разрешенными на mgmt 
+7) DNS (если локалка будет использовать микротик , поставить галку разрешающую рекурсивные запросы - allow remote-requests)
+8) DHCP сервер для bridge-LAN
+9) NAT (src-nat out interface ether1-WAN action: masquerade, если адрес статический от ISP 
+то лучше вместо masquerade использовать src-nat и указать To address в какой натим)
+10) Wifi
+ - Задать имя интерфейса wlan-2GHz
+ - Добавить профиль безопасности
+   WPA2 PSK only
+   Задать Pre-shared key
+
+ - Дополнительные настройки
+   Mode: ap bridge
+   Band: 2GHz-only-N
+   Channel width: 20/40 MHz XX
+   Frequency: auto (если не проводили радиообследование какая частота наименее загруженная)
+   SSID: Any SSID here (тут задаем ssid сети, имя к кот. будем подключаться)
+   Wireless protocol: 802.11 
+   Security Profile: (выбираем тот что создали выше, вместо default)
+   WPS Mode: disabled
+   Frequency mode: regulatory-domain
+   Country: Russia3
+ 
+ в Advanced mode
+   Distance: indoors
+   Hw. Protection mode: rts cts
+11) Firewall
+
+Input
+
+ Connection state: established, related
+ action: accept
+ 
+ Connection state: invalid
+ action: drop
+ 
+ Protocol icmp
+ action: accept
+ 
+ address-list allowed-list 
+ from: bridge-local
+ Protocol: tcp 
+ Ports: 22,80,8291
+ action: accept
+ 
+ In interface: ether1-WAN
+ action: drop
+
+
+Forward
+
+ Connection state: established, related
+ action: accept
+
+ Connection state: invalid
+ action: drop
+
+ In interface: ether1-WAN
+ Connection NAT State !dstnat
+ action: drop
+
+По желанию добавить fasstrack, если не используем очереди или что специфичное
+
+
+
+/ip firewall address-list
+
+add address=192.168.99.0/24 list=allowed-list
+
+
+/ip firewall filter
+
+add action=accept chain=forward connection-state=established,related,untracked
+
+add action=drop chain=forward comment="drop invalid" connection-state=invalid
+
+add action=accept chain=input comment="---INPUT---allow established related" connection-state=established,related
+
+add action=drop chain=input comment="drop invalid" connection-state=invalid
+
+add action=accept chain=input comment="allow icmp" protocol=icmp
+
+add action=accept chain=input comment="allow mgmt" dst-port=22,80,8291 protocol=tcp src-address-list=allowed-list
+
+add action=drop chain=forward comment="drop all from WAN" connection-nat-state=!dstnat in-interface=ether1-WAN
+
+add action=drop chain=input comment="drop all from WAN" in-interface=ether1-WAN
+
