@@ -9,7 +9,7 @@ add name=LAN
 add name=WAN
 /interface wireless security-profiles
 set [ find default=yes ] supplicant-identity=MikroTik
-add authentication-types=wpa2-psk mode=dynamic-keys name=profile1 supplicant-identity="" wpa2-pre-shared-key=fernal9301
+add authentication-types=wpa2-psk mode=dynamic-keys name=profile1 supplicant-identity="" wpa2-pre-shared-key=changeit
 /interface wireless
 set [ find default-name=wlan1 ] band=2ghz-onlyn channel-width=20/40mhz-XX disabled=no distance=indoors frequency=auto hw-protection-mode=rts-cts installation=indoor mode=\
     ap-bridge name=wlan1-2GHz radio-name=mx960 security-profile=profile1 ssid=mt175 wireless-protocol=802.11 wps-mode=disabled
