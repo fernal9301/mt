@@ -1,0 +1,61 @@
+/interface bridge
+add name=bridge-LAN
+/interface ethernet
+set [ find default-name=ether1 ] name=ether1-WAN
+set [ find default-name=ether2 ] name=ether2-PC
+set [ find default-name=ether3 ] name=ether3-TV
+/interface list
+add name=LAN
+add name=WAN
+/interface wireless security-profiles
+set [ find default=yes ] supplicant-identity=MikroTik
+add authentication-types=wpa2-psk mode=dynamic-keys name=profile1 supplicant-identity="" wpa2-pre-shared-key=fernal9301
+/interface wireless
+set [ find default-name=wlan1 ] band=2ghz-onlyn channel-width=20/40mhz-XX disabled=no distance=indoors frequency=auto hw-protection-mode=rts-cts installation=indoor mode=\
+    ap-bridge name=wlan1-2GHz radio-name=mx960 security-profile=profile1 ssid=mt175 wireless-protocol=802.11 wps-mode=disabled
+/ip pool
+add name=dhcp_pool0 ranges=10.10.99.100-10.10.99.120
+/ip dhcp-server
+add address-pool=dhcp_pool0 disabled=no interface=bridge-LAN lease-time=3d name=dhcp1
+/interface bridge port
+add bridge=bridge-LAN interface=ether2-PC
+add bridge=bridge-LAN interface=ether3-TV
+add bridge=bridge-LAN interface=ether4
+add bridge=bridge-LAN interface=ether5
+add bridge=bridge-LAN interface=wlan1-2GHz
+/ip neighbor discovery-settings
+set discover-interface-list=!WAN protocol=mndp
+/interface list member
+add interface=ether1-WAN list=WAN
+add interface=bridge-LAN list=LAN
+/ip address
+add address=10.10.99.1/24 interface=bridge-LAN network=10.10.99.0
+/ip dhcp-client
+add disabled=no interface=ether1-WAN
+/ip dhcp-server network
+add address=10.10.99.0/24 dns-server=10.10.99.1,77.88.8.8 gateway=10.10.99.1
+/ip dns
+set allow-remote-requests=yes servers=77.88.8.8,8.8.8.8
+/ip firewall address-list
+add address=10.10.99.0/24 list=allowed-list
+/ip firewall filter
+add action=fasttrack-connection chain=forward connection-state=established,related
+add action=accept chain=forward comment="allow forward established" connection-state=established,related
+add action=drop chain=forward comment="drop forward invalid" connection-state=invalid
+add action=accept chain=input comment="allow input established" connection-state=established,related
+add action=drop chain=input comment="drop input invalid" connection-state=invalid
+add action=accept chain=input comment="allow icmp" protocol=icmp
+add action=accept chain=input comment="allow mgmt" dst-port=22,80,8291 protocol=tcp src-address-list=allowed-list
+add action=drop chain=forward comment="drop any not dst nat" connection-nat-state=!dstnat in-interface=ether1-WAN
+add action=drop chain=input comment="drop any input " in-interface=ether1-WAN
+/ip firewall nat
+add action=masquerade chain=srcnat out-interface=ether1-WAN
+/ip service
+set telnet disabled=yes
+set ftp disabled=yes
+set api disabled=yes
+set api-ssl disabled=yes
+/system identity
+set name=mt175
+/system ntp client
+set enabled=yes server-dns-names=ru.pool.ntp.org
