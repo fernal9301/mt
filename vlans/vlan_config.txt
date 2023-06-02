@@ -1,0 +1,42 @@
+
+
+Настройка VLAN на оборудовании mikrotik
+
+1) Короткие примеры для тех кто в теме: 
+
+https://wiki.mikrotik.com/wiki/Manual:Basic_VLAN_switching#Other_devices_with_built-in_switch_chip
+
+2) Более развернуто с объяснением:
+
+https://wiki.mikrotik.com/wiki/Manual:Switch_Chip_Features#Setup_Examples
+
+В целом, в новых версиях ROS нужно настройку VLAN делать с помощью bridge vlan filtering механизма.
+
+Общие рекомендации это брать CRS3XX серии свитчей, т.к. там без всяких нюансов поддерживается обработка на уровне свитч-чипа. У остальных устройств есть нюансы и их придется отдельно по каждому свитч-чипу читать и узнавать.
+
+Рассмотрим пример настройки:
+
+```
+/interface bridge
+add name=bridge1
+/interface bridge port
+add bridge=bridge1 interface=ether1 hw=yes
+add bridge=bridge1 interface=ether2 hw=yes pvid=20
+add bridge=bridge1 interface=ether3 hw=yes pvid=30
+/interface bridge vlan
+add bridge=bridge1 tagged=ether1 untagged=ether2 vlan-ids=20
+add bridge=bridge1 tagged=ether1 untagged=ether3 vlan-ids=30
+add bridge=bridge1 tagged=ether1,bridge1 vlan-ids=99
+/interface vlan
+add interface=bridge1 vlan-id=99 name=MGMT
+/ip address
+add address=192.168.99.1/24 interface=MGMT
+/interface bridge
+set bridge1 vlan-filtering=yes
+```
+
+1) Нужно создать bridge(если не создан) и добавить в него требумые порты
+2) Указание pvid равносильно cisco like ```switchport access vlan 20``` команде
+3) В bridge vlan явно нужно указать какой интерфейс транковый(tagged), какой access(untagged)
+4) Если мы хотим иметь mgmt управление по какому-то влану необходимо добавить в bridge vlan также сам bridge1. Создать интерфейс влан (в примере 99 MGMT) повесить его на bridge1 и прописать там ip адрес
+5) Включить vlan-filtering
