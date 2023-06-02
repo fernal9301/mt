@@ -4,11 +4,11 @@
 
 1) Короткие примеры для тех кто в теме: 
 
-https://wiki.mikrotik.com/wiki/Manual:Basic_VLAN_switching#Other_devices_with_built-in_switch_chip
+[https://wiki.mikrotik.com/wiki/Manual:Basic_VLAN_switching#Other_devices_with_built-in_switch_chip]
 
 2) Более развернуто с объяснением:
 
-https://wiki.mikrotik.com/wiki/Manual:Switch_Chip_Features#Setup_Examples
+[https://wiki.mikrotik.com/wiki/Manual:Switch_Chip_Features#Setup_Examples]
 
 В целом, в новых версиях ROS нужно настройку VLAN делать с помощью bridge vlan filtering механизма.
 
